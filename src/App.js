@@ -4,13 +4,13 @@ function Square({value, fillSquare}) {
   return <button className="square" onClick={fillSquare}>{value}</button>;
 }
 export default function Game() {
-  const [history, setHistory] = useState([Array.from({length:6}, () => Array(7).fill(null))]);
+  const [boardHistory, setHistory] = useState([Array.from({length:6}, () => Array(7).fill(null))]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
-  const currentSquares = history[currentMove];
+  const currentSquares = boardHistory[currentMove];
 
   function handlePlay(nextSquares){
-    const nextHistory = [...history.slice(0, currentMove +1), nextSquares];
+    const nextHistory = [...boardHistory.slice(0, currentMove +1), nextSquares];
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length-1);
   }
@@ -19,7 +19,7 @@ export default function Game() {
     setCurrentMove(nextMove);
   }
 
-  const moves = history.map((squares, move) => {
+  const moves = boardHistory.map((squares, move) => {
     let description;
     if (move > 0) {
       description = "Go to move #" + move;
@@ -41,7 +41,7 @@ export default function Game() {
       <div className="gameInfo">
         <ul>
           {moves}
-          <li key='current'>You are on turn {history.length}</li>
+          <li key='current'>You are on turn {boardHistory.length}</li>
         </ul>
       </div>
     </div>
@@ -56,32 +56,36 @@ function Board({xIsNext, squares, onPlay}) {
   } else{
     status = "Next player: " + (xIsNext ? "X" : "O");
   }
-  function handleClick(i) {
-    if (squares[i] || winner){
+  function handleClick(row, column) {
+    console.log("square before = ", squares[row][column])
+    if (squares[row][column] || winner){
       return;
     }
-    const nextSquares = squares.slice();
+    const nextSquares = deepCopy(squares);
     if (xIsNext) {
-      nextSquares[i] = "X";   
+      nextSquares[row][column] = "X";   
     } else {
-      nextSquares[i] = "O";
+      nextSquares[row][column] = "O";
     }
+    console.log("nextSquares = ", nextSquares[row][column], " squares = ", squares[row][column])
     onPlay(nextSquares);
   }
-  const columns = squares.map((lines, index) => {
-    const rows = lines.map((value, i) => {
+  const grid = squares.map((lines, rowNum) => {
+    const rowKey = "row" + rowNum;
+    const rows = lines.map((value, columnNum) => {
+      const squareKey = "row" + rowNum + "column" + columnNum;
       return (
-        <Square key={i} value={value} fillSquare={() => handleClick(i)} />
+        <Square key={squareKey} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
       )
     })
     return (
-      <div key={index} className="board-row">{rows}</div>
+      <div key={rowKey} className="board-row">{rows}</div>
     )
   })
   return (
     <>
       <div className="status">{status}</div>
-      {columns}
+      {grid}
     </>
   );
 }
@@ -105,3 +109,14 @@ function calculateWinner(squares) {
   return null;
 }
 
+function deepCopy(OGarray) {
+  let arrayCopy = Array(OGarray.length);
+  for (let row=0;row<OGarray.length;row++) {
+    arrayCopy[row] = OGarray[row].slice();
+    for (let i=0;i<OGarray[row].length;i++){
+      arrayCopy[row][i] = OGarray[row][i];
+    }
+  }
+  console.log("array cop = ", arrayCopy)
+  return arrayCopy
+}
