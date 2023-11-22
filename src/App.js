@@ -32,7 +32,12 @@ export default function Game() {
       </li>
     )
   })
-
+  let current = "";
+  if (isWinner){
+    current = "Game ended after turn " + (boardHistory.length-1);
+  } else {
+    current = "You are on turn " + boardHistory.length
+  }
   return (
     <div className="game">
       <div className="gameBoard">
@@ -41,33 +46,35 @@ export default function Game() {
       <div className="gameInfo">
         <ul>
           {moves}
-          <li key='current'>You are on turn {boardHistory.length}</li>
+          <li key='current'>{current}</li>
         </ul>
       </div>
     </div>
   )
 }
+let isWinner = null;
 
 function Board({xIsNext, squares, onPlay}) {
-  const winner = calculateWinner(squares);
   let status;
-  if (winner) {
-    status = "Winner: " + winner;
+  if (isWinner) {
+    status = "Winner: " + isWinner;
   } else{
     status = "Next player: " + (xIsNext ? "X" : "O");
-  }
-  function handleClick(row, column) {
-    console.log("square before = ", squares[row][column])
-    if (squares[row][column] || winner){
+  }      
+function handleClick(row, column) {
+    const nextSquares = deepCopy(squares);
+    //check if play is possible
+    if (squares[row][column] || isWinner){
       return;
     }
-    const nextSquares = deepCopy(squares);
+    //display the move
     if (xIsNext) {
       nextSquares[row][column] = "X";   
     } else {
       nextSquares[row][column] = "O";
     }
-    console.log("nextSquares = ", nextSquares[row][column], " squares = ", squares[row][column])
+    //determine if we have a winner
+    isWinner = calculateWinner(nextSquares, row, column)
     onPlay(nextSquares);
   }
   const grid = squares.map((lines, rowNum) => {
@@ -89,24 +96,42 @@ function Board({xIsNext, squares, onPlay}) {
     </>
   );
 }
-function calculateWinner(squares) {
-  const lines = [
-    [0,1,2],
-    [3,4,5],
-    [6,7,8],
-    [0,3,6],
-    [1,4,7],
-    [2,5,8],
-    [0,4,8],
-    [2,4,6]
-  ];
-  for (let i=0; i<lines.length; i++) {
-    const [a,b,c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+function calculateWinner(squares, rowPos, columnPos) {
+  const newMark = squares[rowPos][columnPos];
+
+  function checkDirection(rowChange, columnChange){
+    let counter = 0
+    for (let i=1;i<4;i++){
+      const newRow = rowPos + rowChange*i;
+      const newColumn = columnPos + columnChange*i;
+      console.log("newRow = ", newRow)
+      if (newRow>=0 && newRow<=squares.length-1 &&
+          newColumn>=0 && newColumn<=squares[rowPos].length &&
+          squares[newRow][newColumn] == newMark){
+        counter += 1
+      } else{
+        break
+      }
     }
+    return counter
   }
-  return null;
+  //check horizontal
+  if (checkDirection(0,1) + checkDirection(0,-1) == 3){
+    return newMark
+  }
+  //check vertical
+  if (checkDirection(1,0) + checkDirection(-1,0) ==3){
+    return newMark
+  }
+  //check diagonal up
+  if (checkDirection(-1,-1) + checkDirection(1,1) == 3){
+    return newMark
+  }
+  //check diaonal down
+  if (checkDirection(-1,1) + checkDirection(1,-1) ==3){
+    return newMark
+  }
+  return null
 }
 
 function deepCopy(OGarray) {
@@ -117,6 +142,5 @@ function deepCopy(OGarray) {
       arrayCopy[row][i] = OGarray[row][i];
     }
   }
-  console.log("array cop = ", arrayCopy)
-  return arrayCopy
+  return arrayCopy;
 }
