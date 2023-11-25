@@ -3,6 +3,7 @@ import { useState } from "react";
 function Square({value, fillSquare}) {
   return <button className="square" onClick={fillSquare}>{value}</button>;
 }
+let stillWinner
 export default function Game() {
   const [boardHistory, setHistory] = useState([Array.from({length:6}, () => Array(7).fill(null))]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -14,9 +15,17 @@ export default function Game() {
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length-1);
   }
-
   function jumpTo(nextMove){
+    if (isWinner){
+      stillWinner = isWinner;
+    }
+    isWinner = null
+    console.log("still: ", stillWinner)
     setCurrentMove(nextMove);
+    if (nextMove == boardHistory.length-1){
+      isWinner = stillWinner;
+    }
+
   }
 
   const moves = boardHistory.map((squares, move) => {
@@ -36,7 +45,7 @@ export default function Game() {
   if (isWinner){
     current = "Game ended after turn " + (boardHistory.length-1);
   } else {
-    current = "You are on turn " + boardHistory.length
+    current = "You are on turn " + currentMove
   }
   return (
     <div className="game">
@@ -104,7 +113,6 @@ function calculateWinner(squares, rowPos, columnPos) {
     for (let i=1;i<4;i++){
       const newRow = rowPos + rowChange*i;
       const newColumn = columnPos + columnChange*i;
-      console.log("newRow = ", newRow)
       if (newRow>=0 && newRow<=squares.length-1 &&
           newColumn>=0 && newColumn<=squares[rowPos].length &&
           squares[newRow][newColumn] == newMark){
