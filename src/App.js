@@ -3,7 +3,8 @@ import { useState } from "react";
 function Square({value, fillSquare}) {
   return <button className="square" onClick={fillSquare}>{value}</button>;
 }
-let stillWinner
+let stillWinner;
+const winCon = 4;
 export default function Game() {
   const [boardHistory, setHistory] = useState([Array.from({length:6}, () => Array(7).fill(null))]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -16,14 +17,14 @@ export default function Game() {
     setCurrentMove(nextHistory.length-1);
   }
   function jumpTo(nextMove){
-    if (isWinner){
-      stillWinner = isWinner;
+    if (winningSquares){
+      stillWinner = winningSquares;
     }
-    isWinner = null
+    winningSquares = null
     console.log("still: ", stillWinner)
     setCurrentMove(nextMove);
     if (nextMove == boardHistory.length-1){
-      isWinner = stillWinner;
+      winningSquares = stillWinner;
     }
 
   }
@@ -42,7 +43,7 @@ export default function Game() {
     )
   })
   let current = "";
-  if (isWinner){
+  if (winningSquares){
     current = "Game ended after turn " + (boardHistory.length-1);
   } else {
     current = "You are on turn " + currentMove
@@ -61,19 +62,19 @@ export default function Game() {
     </div>
   )
 }
-let isWinner = null;
+let winningSquares = null;
 
 function Board({xIsNext, squares, onPlay}) {
   let status;
-  if (isWinner) {
-    status = "Winner: " + isWinner;
+  if (winningSquares) {
+    status = "Winner: " + winningSquares[0];
   } else{
     status = "Next player: " + (xIsNext ? "X" : "O");
   }      
 function handleClick(row, column) {
     const nextSquares = deepCopy(squares);
     //check if play is possible
-    if (squares[row][column] || isWinner){
+    if (squares[row][column] || winningSquares){
       return;
     }
     //display the move
@@ -83,7 +84,7 @@ function handleClick(row, column) {
       nextSquares[row][column] = "O";
     }
     //determine if we have a winner
-    isWinner = calculateWinner(nextSquares, row, column)
+    winningSquares = calculateWinner(nextSquares, row, column)
     onPlay(nextSquares);
   }
   const grid = squares.map((lines, rowNum) => {
@@ -107,37 +108,42 @@ function handleClick(row, column) {
 }
 function calculateWinner(squares, rowPos, columnPos) {
   const newMark = squares[rowPos][columnPos];
-
   function checkDirection(rowChange, columnChange){
-    let counter = 0
-    for (let i=1;i<4;i++){
+    let squareCounter = [];
+    console.log(winCon)
+    for (let i=1;i<winCon;i++){
       const newRow = rowPos + rowChange*i;
       const newColumn = columnPos + columnChange*i;
       if (newRow>=0 && newRow<=squares.length-1 &&
           newColumn>=0 && newColumn<=squares[rowPos].length &&
           squares[newRow][newColumn] == newMark){
-        counter += 1
+        squareCounter.push([newRow, newColumn])
       } else{
         break
       }
     }
-    return counter
+    return squareCounter
   }
+  const firstSquare = [newMark, [rowPos, columnPos]]
   //check horizontal
-  if (checkDirection(0,1) + checkDirection(0,-1) == 3){
-    return newMark
+  let horizontalSquares = firstSquare.concat(checkDirection(0,1)).concat(checkDirection(0,-1));
+  if (horizontalSquares.length >= winCon+1){
+    return horizontalSquares;
   }
   //check vertical
-  if (checkDirection(1,0) + checkDirection(-1,0) ==3){
-    return newMark
+  let verticalSquares = firstSquare.concat(checkDirection(1,0)).concat(checkDirection(-1,0));
+  if (verticalSquares.length >= winCon+1){
+    return verticalSquares;
   }
   //check diagonal up
-  if (checkDirection(-1,-1) + checkDirection(1,1) == 3){
-    return newMark
+  let diagonalUpSquares = firstSquare.concat(checkDirection(1,1)).concat(checkDirection(-1,-1));
+  if (diagonalUpSquares.length >= winCon+1){
+    return diagonalUpSquares;
   }
   //check diaonal down
-  if (checkDirection(-1,1) + checkDirection(1,-1) ==3){
-    return newMark
+  let diagonalDownSquares = firstSquare.concat(checkDirection(-1,1)).concat(checkDirection(1,-1));
+  if (diagonalDownSquares.length >= winCon+1){
+    return diagonalDownSquares;
   }
   return null
 }
