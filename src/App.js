@@ -1,7 +1,15 @@
 import { useState } from "react";
 
-function Square({value, fillSquare}) {
-  return <button className="square" onClick={fillSquare}>{value}</button>;
+function Square({squareID, value, fillSquare}) {
+  let isWinning = false
+  if (winningSquares){
+    console.log("ID: ", squareID, "winList: ", winningSquares)
+    if (winningSquares.some(arr => JSON.stringify(arr) === JSON.stringify(squareID))) {
+      console.log("match found")
+      isWinning = true 
+    }
+  }
+  return <button className={isWinning ? "winning":"square"} onClick={fillSquare}>{value}</button>;
 }
 let stillWinner;
 const winCon = 4;
@@ -91,8 +99,9 @@ function handleClick(row, column) {
     const rowKey = "row" + rowNum;
     const rows = lines.map((value, columnNum) => {
       const squareKey = "row" + rowNum + "column" + columnNum;
+      const squareID = [rowNum, columnNum]
       return (
-        <Square key={squareKey} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
+        <Square key={squareKey} squareID={squareID} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
       )
     })
     return (
@@ -110,7 +119,6 @@ function calculateWinner(squares, rowPos, columnPos) {
   const newMark = squares[rowPos][columnPos];
   function checkDirection(rowChange, columnChange){
     let squareCounter = [];
-    console.log(winCon)
     for (let i=1;i<winCon;i++){
       const newRow = rowPos + rowChange*i;
       const newColumn = columnPos + columnChange*i;
