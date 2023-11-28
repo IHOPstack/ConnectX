@@ -3,9 +3,7 @@ import { useState } from "react";
 function Square({squareID, value, fillSquare}) {
   let isWinning = false
   if (winningSquares){
-    console.log("ID: ", squareID, "winList: ", winningSquares)
     if (winningSquares.some(arr => JSON.stringify(arr) === JSON.stringify(squareID))) {
-      console.log("match found")
       isWinning = true 
     }
   }
@@ -32,7 +30,6 @@ export default function Game() {
       stillWinner = winningSquares;
     }
     winningSquares = null
-    console.log("still: ", stillWinner)
     setCurrentMove(nextMove);
     if (nextMove == boardHistory.length-1){
       winningSquares = stillWinner;
@@ -108,7 +105,7 @@ function handleClick(row, column) {
     winningSquares = calculateWinner(nextSquares, row, column)
     onPlay(nextSquares);
   }
-  //layout squares for board
+  //layout squares and labels for board
   const grid = squares.map((lines, rowNum) => {
     const rowKey = "row" + rowNum;
     const rows = lines.map((value, columnNum) => {
@@ -118,21 +115,25 @@ function handleClick(row, column) {
         <Square key={squareKey} squareID={squareID} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
       )
     })
-    return (
-      <div key={rowKey} className="board-row">{rows}</div>
+    const numLabel = <Label character={Math.abs(rowNum-6)}></Label>
+    return (   
+      <div key={rowKey} className="board-row">{numLabel}{rows}</div>
     )
   })
-  //create lower labels
-  for (let i=0;i<squares[0];i++){
-    break;
-  }
+  //lower labels
+  const letterLabels = squares[0].map((column, num) =>
+    <Label character={String.fromCharCode(num+97)}></Label>
+  )
+
   //return the board
   return (
     <>
       <div className="status">{status}</div>
       {grid}
-      <Label character={"kdfdfs"}></Label>
-      <div className="gridLabel" style={{width: 34*7}}>1 2 3 4 5 6 7</div>
+      <div className="board-row">
+        <Label character={""}></Label>
+        {letterLabels}
+        </div>
     </>
   );
 }
