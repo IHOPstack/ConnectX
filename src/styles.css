@@ -72,7 +72,7 @@ body {
 }
 
 .winning {
-  background: #6e0202;
+  background: yellow;
   border: 1px solid #999;
   float: left;
   font-size: 24px;
@@ -81,6 +81,20 @@ body {
   height: 34px;
   margin-right: -1px;
   margin-top: -1px;
+  padding: 0;
+  text-align: center;
+  width: 34px;
+}
+
+.gridLabel {
+  background: #fff;
+  float: left;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 34px;
+  height: 34px;
+  margin-right: 1px;
+  margin-top: 0px;
   padding: 0;
   text-align: center;
   width: 34px;

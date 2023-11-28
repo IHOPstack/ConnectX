@@ -11,6 +11,9 @@ function Square({squareID, value, fillSquare}) {
   }
   return <button className={isWinning ? "winning":"square"} onClick={fillSquare}>{value}</button>;
 }
+function Label({character}){
+  return <label className="gridLabel">{character}</label>
+}
 let stillWinner;
 const winCon = 4;
 export default function Game() {
@@ -40,7 +43,17 @@ export default function Game() {
   const moves = boardHistory.map((squares, move) => {
     let description;
     if (move > 0) {
-      description = "Go to move #" + move;
+      //find position of move
+      for (let row =0; row < squares.length; row++){
+        for (let column=0; column<squares[row].length; column++){
+          if (squares[row][column] != boardHistory[move-1][row][column]){
+            //assign position to button
+            const playedSquare = "" + (row+1) + String.fromCharCode(column+97);
+            description = "Move #" + move + " XorO at " + playedSquare;
+            break;
+          }
+        }
+      }
     } else {
       description = "Go to game start";
     }
@@ -95,6 +108,7 @@ function handleClick(row, column) {
     winningSquares = calculateWinner(nextSquares, row, column)
     onPlay(nextSquares);
   }
+  //layout squares for board
   const grid = squares.map((lines, rowNum) => {
     const rowKey = "row" + rowNum;
     const rows = lines.map((value, columnNum) => {
@@ -108,10 +122,17 @@ function handleClick(row, column) {
       <div key={rowKey} className="board-row">{rows}</div>
     )
   })
+  //create lower labels
+  for (let i=0;i<squares[0];i++){
+    break;
+  }
+  //return the board
   return (
     <>
       <div className="status">{status}</div>
       {grid}
+      <Label character={"kdfdfs"}></Label>
+      <div className="gridLabel" style={{width: 34*7}}>1 2 3 4 5 6 7</div>
     </>
   );
 }
