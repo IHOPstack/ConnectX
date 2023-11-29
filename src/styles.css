@@ -98,7 +98,6 @@ body {
   width: 34px;
 }
 
-
 .board-row:after {
   clear: both;
   content: '';
@@ -113,6 +112,8 @@ body {
   flex-direction: row;
 }
 
-.game-info {
+.gameInfo {
   margin-left: 20px;
+  display: flex;
+  flex-direction: column;
 }

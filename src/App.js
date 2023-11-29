@@ -1,4 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Button from '@mui/joy/Button';
+import Sheet from '@mui/joy/Sheet';
+import { CssVarsProvider, useColorScheme } from '@mui/joy/styles';
+import { CssBaseline, ListItem } from "@mui/joy";
+import Typography from '@mui/joy/Typography';
+import List from '@mui/joy/List';
+import Card from '@mui/joy/Card';
+
 
 function Square({squareID, value, fillSquare}) {
   let isWinning = false
@@ -7,15 +15,18 @@ function Square({squareID, value, fillSquare}) {
       isWinning = true 
     }
   }
-  return <button className={isWinning ? "winning":"square"} onClick={fillSquare}>{value}</button>;
+  return <Button className={isWinning ? "winning":"square"} variant={isWinning ? "solid":"outlined"} onClick={fillSquare}>{value}</Button>;
 }
 function Label({character}){
-  return <label className="gridLabel">{character}</label>
+  return <Typography className="gridLabel">{character}</Typography>
 }
 let stillWinner;
 const winCon = 4;
+const boardWidth = 7;
+const boardHeight = 6;
+
 export default function Game() {
-  const [boardHistory, setHistory] = useState([Array.from({length:6}, () => Array(7).fill(null))]);
+  const [boardHistory, setHistory] = useState([Array.from({length:boardHeight}, () => Array(boardWidth).fill(null))]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = boardHistory[currentMove];
@@ -55,9 +66,9 @@ export default function Game() {
       description = "Go to game start";
     }
     return (
-      <li key={move}>
-        <button onClick={() => jumpTo(move)}>{description}</button>
-      </li>
+      <ListItem key={move}>
+        <Button variant="soft" onClick={() => jumpTo(move)}>{description}</Button>
+      </ListItem>
     )
   })
   let current = "";
@@ -67,17 +78,21 @@ export default function Game() {
     current = "You are on turn " + currentMove
   }
   return (
-    <div className="game">
-      <div className="gameBoard">
-        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
-      </div>
+    <CssVarsProvider>
+      <CssBaseline/>
+      <ModeToggle /> 
+      <div className="game">
+        <div className="gameBoard">
+          <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+        </div>
       <div className="gameInfo">
-        <ul>
+        <List size="small">
           {moves}
-          <li key='current'>{current}</li>
-        </ul>
+          <Typography key='current'>{current}</Typography>
+        </List>
       </div>
-    </div>
+      </div>
+    </CssVarsProvider>
   )
 }
 let winningSquares = null;
@@ -85,9 +100,13 @@ let winningSquares = null;
 function Board({xIsNext, squares, onPlay}) {
   let status;
   if (winningSquares) {
-    status = "Winner: " + winningSquares[0];
+    status = <Typography >Winner: 
+      <Typography variant="solid">{winningSquares[0]}</Typography>
+    </Typography>
   } else{
-    status = "Next player: " + (xIsNext ? "X" : "O");
+    status = <Typography >Next player: 
+    <Typography variant="solid">{xIsNext ? "X" : "O"}</Typography>
+  </Typography>
   }      
 function handleClick(row, column) {
     const nextSquares = deepCopy(squares);
@@ -115,7 +134,7 @@ function handleClick(row, column) {
         <Square key={squareKey} squareID={squareID} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
       )
     })
-    const numLabel = <Label character={Math.abs(rowNum-6)}></Label>
+    const numLabel = <Label character={Math.abs(rowNum-boardHeight)}></Label>
     return (   
       <div key={rowKey} className="board-row">{numLabel}{rows}</div>
     )
@@ -178,6 +197,10 @@ function calculateWinner(squares, rowPos, columnPos) {
   return null
 }
 
+function NewBoard(){
+
+}
+
 function deepCopy(OGarray) {
   let arrayCopy = Array(OGarray.length);
   for (let row=0;row<OGarray.length;row++) {
@@ -187,4 +210,22 @@ function deepCopy(OGarray) {
     }
   }
   return arrayCopy;
+}
+//Light/Dark mode
+function ModeToggle(){
+  const {mode,setMode} = useColorScheme();
+  const [mounted,setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted){
+    return null;
+  }
+  return(
+    <Button variant="outlined"
+    onClick={() => {
+      setMode(mode === 'light' ? 'dark' : 'light');
+    }}
+  >{mode === 'light' ? 'Turn dark' : 'Turn light'}</Button>
+  );
 }
