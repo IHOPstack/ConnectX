@@ -6,6 +6,14 @@ import { CssBaseline, ListItem } from "@mui/joy";
 import Typography from '@mui/joy/Typography';
 import List from '@mui/joy/List';
 import Card from '@mui/joy/Card';
+import FormControl from '@mui/joy/FormControl';
+import FormLabel from '@mui/joy/FormLabel';
+import Input from '@mui/joy/Input';
+import Modal from '@mui/joy/Modal';
+import ModalDialog from '@mui/joy/ModalDialog';
+import DialogTitle from '@mui/joy/DialogTitle';
+import DialogContent from '@mui/joy/DialogContent';
+import Stack from '@mui/joy/Stack';
 
 
 function Square({squareID, value, fillSquare}) {
@@ -82,6 +90,7 @@ export default function Game() {
       <CssBaseline/>
       <ModeToggle /> 
       <div className="game">
+        <NewBoard />
         <div className="gameBoard">
           <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
         </div>
@@ -198,7 +207,50 @@ function calculateWinner(squares, rowPos, columnPos) {
 }
 
 function NewBoard(){
+  const [open,setOpen] = useState(false);
+  const [inputHeight,setInputHeight] = useState(boardHeight);
+  const [inputWidth,setInputWidth] = useState(boardWidth);
+  const [inputWinCon,setInputWinCon] = useState(winCon);
 
+  function changeSettings(inputHeight, inputWidth, inputWinCon){
+    setOpen(false);
+  }
+  return(
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>Change Settings</Button>
+      <Modal open={open} onClose={()=>setOpen(false)}>
+        <ModalDialog>
+          <DialogTitle>New Board. New game.</DialogTitle>
+          <DialogContent>You know what you're doing. Do I really need to be talking still?</DialogContent>
+          <form onSubmit={(event)=> {
+            event.preventDefault();
+            changeSettings(inputHeight, inputWidth, inputWinCon)
+          }}
+          >
+            <Stack spacing={1} direction="row">
+              <FormControl error={false}>
+                <FormLabel>length</FormLabel>
+                <Input required defaultValue={boardWidth} onChange={event => {
+                  setInputWidth(event.target.value)
+                }}/>
+              </FormControl>
+              <FormControl error={false}>
+                <FormLabel>height</FormLabel>
+                <Input required defaultValue={boardHeight} onChange={event => {
+                  setInputHeight(event.target.value)}}/>
+              </FormControl>
+              <FormControl error={false}>
+                <FormLabel>amount in a row needed</FormLabel>
+                <Input required defaultValue={winCon} onChange={event => {
+                  setInputWinCon(event.target.value)}}/>
+              </FormControl>
+              <Button type="submit">Let's play!</Button>
+            </Stack>
+          </form>
+        </ModalDialog>
+      </Modal>
+    </>
+  )
 }
 
 function deepCopy(OGarray) {
