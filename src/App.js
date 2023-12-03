@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Button from '@mui/joy/Button';
 import Sheet from '@mui/joy/Sheet';
 import { CssVarsProvider, useColorScheme } from '@mui/joy/styles';
@@ -30,14 +30,16 @@ function Label({character}){
 }
 let stillWinner;
 const winCon = 4;
-const boardWidth = 7;
-const boardHeight = 6;
 
 export default function Game() {
+  const [boardWidth, setBoardWidth] = useState(7);
+  const [boardHeight, setBoardHeight] = useState(6);
   const [boardHistory, setHistory] = useState([Array.from({length:boardHeight}, () => Array(boardWidth).fill(null))]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = boardHistory[currentMove];
+  console.log("board histyory: ", boardHistory)
+  console.log("currennt squares: ", currentSquares);
 
   function handlePlay(nextSquares){
     const nextHistory = [...boardHistory.slice(0, currentMove +1), nextSquares];
@@ -85,12 +87,12 @@ export default function Game() {
   } else {
     current = "You are on turn " + currentMove
   }
-  return (
+    return (
     <CssVarsProvider>
       <CssBaseline/>
       <ModeToggle /> 
       <div className="game">
-        <NewBoard />
+        <ChangeGame boardHeight={boardHeight} boardWidth={boardWidth} setBoardHeight={setBoardHeight} setBoardWidth={setBoardWidth} setHistory={setHistory} setCurrentMove={setCurrentMove} />
         <div className="gameBoard">
           <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
         </div>
@@ -117,7 +119,7 @@ function Board({xIsNext, squares, onPlay}) {
     <Typography variant="solid">{xIsNext ? "X" : "O"}</Typography>
   </Typography>
   }      
-function handleClick(row, column) {
+  function handleClick(row, column) {
     const nextSquares = deepCopy(squares);
     //check if play is possible
     if (squares[row][column] || winningSquares){
@@ -135,15 +137,16 @@ function handleClick(row, column) {
   }
   //layout squares and labels for board
   const grid = squares.map((lines, rowNum) => {
-    const rowKey = "row" + rowNum;
+    const rowKey = squares.length-rowNum;
     const rows = lines.map((value, columnNum) => {
-      const squareKey = "row" + rowNum + "column" + columnNum;
+      const columnLetter = String.fromCharCode(columnNum+97)
+      const squareKey = rowKey + columnLetter;
       const squareID = [rowNum, columnNum]
       return (
         <Square key={squareKey} squareID={squareID} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
       )
     })
-    const numLabel = <Label character={Math.abs(rowNum-boardHeight)}></Label>
+    const numLabel = <Label character={rowKey}></Label>
     return (   
       <div key={rowKey} className="board-row">{numLabel}{rows}</div>
     )
@@ -152,7 +155,6 @@ function handleClick(row, column) {
   const letterLabels = squares[0].map((column, num) =>
     <Label character={String.fromCharCode(num+97)}></Label>
   )
-
   //return the board
   return (
     <>
@@ -164,6 +166,56 @@ function handleClick(row, column) {
         </div>
     </>
   );
+}
+function ChangeGame({setBoardHeight, setBoardWidth, boardHeight, boardWidth, setHistory, setCurrentMove}){
+  const [open,setOpen] = useState(false);
+  const [inputHeight,setInputHeight] = useState(boardHeight);
+  const [inputWidth,setInputWidth] = useState(boardWidth);
+  const [inputWinCon,setInputWinCon] = useState(winCon);
+  //Change board parameters  
+  function ChangeSettings(inputHeight, inputWidth, inputWinCon){
+    setBoardHeight(inputHeight);
+    setBoardWidth(inputWidth);
+    setHistory([Array.from({length:inputHeight}, () => Array(parseInt(inputWidth)).fill(null))]);
+    setCurrentMove(0);
+    console.log(inputHeight, inputWidth);
+    setOpen(false);
+  }
+  return(
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>Change Settings</Button>
+      <Modal open={open} onClose={()=>setOpen(false)}>
+        <ModalDialog>
+          <DialogTitle>New Board. New game.</DialogTitle>
+          <DialogContent>You know what you're doing. Do I really need to be talking still?</DialogContent>
+          <form onSubmit={(event)=> {
+            event.preventDefault();
+            ChangeSettings(inputHeight, inputWidth, inputWinCon)
+          }}
+          >
+            <Stack spacing={1} direction="row">
+              <FormControl error={false}>
+                <FormLabel>length</FormLabel>
+                <Input required defaultValue={boardWidth} onChange={event => {
+                  setInputWidth(event.target.value)}}/>
+              </FormControl>
+              <FormControl error={false}>
+                <FormLabel>height</FormLabel>
+                <Input required defaultValue={boardHeight} onChange={event => {
+                  setInputHeight(event.target.value)}}/>
+              </FormControl>
+              <FormControl error={false}>
+                <FormLabel>amount in a row needed</FormLabel>
+                <Input required defaultValue={winCon} onChange={event => {
+                  setInputWinCon(event.target.value)}}/>
+              </FormControl>
+              <Button type="submit">Let's play!</Button>
+            </Stack>
+          </form>
+        </ModalDialog>
+      </Modal>
+    </>
+  )
 }
 function calculateWinner(squares, rowPos, columnPos) {
   const newMark = squares[rowPos][columnPos];
@@ -205,54 +257,6 @@ function calculateWinner(squares, rowPos, columnPos) {
   }
   return null
 }
-
-function NewBoard(){
-  const [open,setOpen] = useState(false);
-  const [inputHeight,setInputHeight] = useState(boardHeight);
-  const [inputWidth,setInputWidth] = useState(boardWidth);
-  const [inputWinCon,setInputWinCon] = useState(winCon);
-
-  function changeSettings(inputHeight, inputWidth, inputWinCon){
-    setOpen(false);
-  }
-  return(
-    <>
-      <Button variant="outline" onClick={() => setOpen(true)}>Change Settings</Button>
-      <Modal open={open} onClose={()=>setOpen(false)}>
-        <ModalDialog>
-          <DialogTitle>New Board. New game.</DialogTitle>
-          <DialogContent>You know what you're doing. Do I really need to be talking still?</DialogContent>
-          <form onSubmit={(event)=> {
-            event.preventDefault();
-            changeSettings(inputHeight, inputWidth, inputWinCon)
-          }}
-          >
-            <Stack spacing={1} direction="row">
-              <FormControl error={false}>
-                <FormLabel>length</FormLabel>
-                <Input required defaultValue={boardWidth} onChange={event => {
-                  setInputWidth(event.target.value)
-                }}/>
-              </FormControl>
-              <FormControl error={false}>
-                <FormLabel>height</FormLabel>
-                <Input required defaultValue={boardHeight} onChange={event => {
-                  setInputHeight(event.target.value)}}/>
-              </FormControl>
-              <FormControl error={false}>
-                <FormLabel>amount in a row needed</FormLabel>
-                <Input required defaultValue={winCon} onChange={event => {
-                  setInputWinCon(event.target.value)}}/>
-              </FormControl>
-              <Button type="submit">Let's play!</Button>
-            </Stack>
-          </form>
-        </ModalDialog>
-      </Modal>
-    </>
-  )
-}
-
 function deepCopy(OGarray) {
   let arrayCopy = Array(OGarray.length);
   for (let row=0;row<OGarray.length;row++) {
