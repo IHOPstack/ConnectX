@@ -16,7 +16,7 @@ import DialogContent from '@mui/joy/DialogContent';
 import Stack from '@mui/joy/Stack';
 
 
-function Square({squareID, value, fillSquare}) {
+function Square({squareID, value, fillSquare, winningSquares}) {
   let isWinning = false
   if (winningSquares){
     if (winningSquares.some(arr => JSON.stringify(arr) === JSON.stringify(squareID))) {
@@ -29,17 +29,14 @@ function Label({character}){
   return <Typography className="gridLabel">{character}</Typography>
 }
 let stillWinner;
-const winCon = 4;
 
 export default function Game() {
-  const [boardWidth, setBoardWidth] = useState(7);
-  const [boardHeight, setBoardHeight] = useState(6);
-  const [boardHistory, setHistory] = useState([Array.from({length:boardHeight}, () => Array(boardWidth).fill(null))]);
+  const [boardHistory, setHistory] = useState([Array.from({length:6}, () => Array(7).fill(null))]);
   const [currentMove, setCurrentMove] = useState(0);
+  const [winCon, setWinCon] = useState(4);
+  const [winningSquares, setWinningSquares] = useState(null);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = boardHistory[currentMove];
-  console.log("board histyory: ", boardHistory)
-  console.log("currennt squares: ", currentSquares);
 
   function handlePlay(nextSquares){
     const nextHistory = [...boardHistory.slice(0, currentMove +1), nextSquares];
@@ -50,10 +47,10 @@ export default function Game() {
     if (winningSquares){
       stillWinner = winningSquares;
     }
-    winningSquares = null
+    setWinningSquares(null);
     setCurrentMove(nextMove);
     if (nextMove == boardHistory.length-1){
-      winningSquares = stillWinner;
+      setWinningSquares(stillWinner);
     }
 
   }
@@ -92,9 +89,9 @@ export default function Game() {
       <CssBaseline/>
       <ModeToggle /> 
       <div className="game">
-        <ChangeGame boardHeight={boardHeight} boardWidth={boardWidth} setBoardHeight={setBoardHeight} setBoardWidth={setBoardWidth} setHistory={setHistory} setCurrentMove={setCurrentMove} />
+        <ChangeGame currentWidth={currentSquares[0].length} currentHeight={currentSquares.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
         <div className="gameBoard">
-          <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+          <Board xIsNext={xIsNext} squares={currentSquares} winCon={winCon} winningSquares={winningSquares} setWinningSquares={setWinningSquares} onPlay={handlePlay} />
         </div>
       <div className="gameInfo">
         <List size="small">
@@ -106,9 +103,7 @@ export default function Game() {
     </CssVarsProvider>
   )
 }
-let winningSquares = null;
-
-function Board({xIsNext, squares, onPlay}) {
+function Board({xIsNext, squares, onPlay, winCon, winningSquares, setWinningSquares}) {
   let status;
   if (winningSquares) {
     status = <Typography >Winner: 
@@ -132,7 +127,7 @@ function Board({xIsNext, squares, onPlay}) {
       nextSquares[row][column] = "O";
     }
     //determine if we have a winner
-    winningSquares = calculateWinner(nextSquares, row, column)
+    setWinningSquares(calculateWinner(nextSquares, row, column, winCon));
     onPlay(nextSquares);
   }
   //layout squares and labels for board
@@ -143,7 +138,7 @@ function Board({xIsNext, squares, onPlay}) {
       const squareKey = rowKey + columnLetter;
       const squareID = [rowNum, columnNum]
       return (
-        <Square key={squareKey} squareID={squareID} value={value} fillSquare={() => handleClick(rowNum, columnNum)} />
+        <Square key={squareKey} squareID={squareID} value={value} winningSquares={winningSquares} fillSquare={() => handleClick(rowNum, columnNum)} />
       )
     })
     const numLabel = <Label character={rowKey}></Label>
@@ -167,18 +162,17 @@ function Board({xIsNext, squares, onPlay}) {
     </>
   );
 }
-function ChangeGame({setBoardHeight, setBoardWidth, boardHeight, boardWidth, setHistory, setCurrentMove}){
+function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, winCon, setWinCon, setWinningSquares}){
   const [open,setOpen] = useState(false);
-  const [inputHeight,setInputHeight] = useState(boardHeight);
-  const [inputWidth,setInputWidth] = useState(boardWidth);
+  const [inputHeight,setInputHeight] = useState(currentHeight);
+  const [inputWidth,setInputWidth] = useState(currentWidth);
   const [inputWinCon,setInputWinCon] = useState(winCon);
   //Change board parameters  
   function ChangeSettings(inputHeight, inputWidth, inputWinCon){
-    setBoardHeight(inputHeight);
-    setBoardWidth(inputWidth);
     setHistory([Array.from({length:inputHeight}, () => Array(parseInt(inputWidth)).fill(null))]);
     setCurrentMove(0);
-    console.log(inputHeight, inputWidth);
+    setWinCon(parseInt(inputWinCon));
+    setWinningSquares(null);
     setOpen(false);
   }
   return(
@@ -196,12 +190,12 @@ function ChangeGame({setBoardHeight, setBoardWidth, boardHeight, boardWidth, set
             <Stack spacing={1} direction="row">
               <FormControl error={false}>
                 <FormLabel>length</FormLabel>
-                <Input required defaultValue={boardWidth} onChange={event => {
+                <Input required defaultValue={inputWidth} onChange={event => {
                   setInputWidth(event.target.value)}}/>
               </FormControl>
               <FormControl error={false}>
                 <FormLabel>height</FormLabel>
-                <Input required defaultValue={boardHeight} onChange={event => {
+                <Input required defaultValue={inputHeight} onChange={event => {
                   setInputHeight(event.target.value)}}/>
               </FormControl>
               <FormControl error={false}>
@@ -217,7 +211,7 @@ function ChangeGame({setBoardHeight, setBoardWidth, boardHeight, boardWidth, set
     </>
   )
 }
-function calculateWinner(squares, rowPos, columnPos) {
+function calculateWinner(squares, rowPos, columnPos, winCon) {
   const newMark = squares[rowPos][columnPos];
   function checkDirection(rowChange, columnChange){
     let squareCounter = [];
