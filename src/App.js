@@ -5,7 +5,6 @@ import { CssVarsProvider, useColorScheme } from '@mui/joy/styles';
 import { CssBaseline, ListItem } from "@mui/joy";
 import Typography from '@mui/joy/Typography';
 import List from '@mui/joy/List';
-import Card from '@mui/joy/Card';
 import FormControl from '@mui/joy/FormControl';
 import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
@@ -14,7 +13,7 @@ import ModalDialog from '@mui/joy/ModalDialog';
 import DialogTitle from '@mui/joy/DialogTitle';
 import DialogContent from '@mui/joy/DialogContent';
 import Stack from '@mui/joy/Stack';
-
+import Switch from '@mui/joy/Switch';
 
 function Square({squareID, value, fillSquare, winningSquares}) {
   let isWinning = false
@@ -35,6 +34,7 @@ export default function Game() {
   const [currentMove, setCurrentMove] = useState(0);
   const [winCon, setWinCon] = useState(4);
   const [winningSquares, setWinningSquares] = useState(null);
+  const [gravity, setGravity] = useState(false);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = boardHistory[currentMove];
 
@@ -52,7 +52,41 @@ export default function Game() {
     if (nextMove == boardHistory.length-1){
       setWinningSquares(stillWinner);
     }
-
+  }
+  function gravityDrop(){
+    //lower all tokens
+    for (let columnPos=0;columnPos<currentSquares[0].length;columnPos++){
+      let emptyCells = [];
+      for (let rowNum=currentSquares.length-1;rowNum>=0;rowNum--){
+        let boxInQuestion = currentSquares[rowNum][columnPos];
+        if (!boxInQuestion){
+          emptyCells.push(rowNum);
+        } else {
+          if (!emptyCells.length == 0){
+            const newRow = emptyCells.shift();
+            currentSquares[newRow][columnPos] = boxInQuestion;
+            currentSquares[rowNum][columnPos] = null;
+            emptyCells.push(rowNum);
+          }
+        }
+      }
+    }
+    //check for winner on new board (should find some way to avoid needing loop label)
+    labledLoop: for (let columnPos=0;columnPos<currentSquares[0].length;columnPos++){
+      for (let rowNum=currentSquares.length-1;rowNum>=0;rowNum--){
+        if (currentSquares[rowNum][columnPos]){
+          let winningList = calculateWinner(currentSquares, rowNum, columnPos, winCon);
+          if (winningList){
+            setWinningSquares(winningList);
+            break labledLoop;  
+        } else {
+          break;
+        }
+        }
+      }
+    }
+    handlePlay(currentSquares)
+    setGravity(true);
   }
 
   const moves = boardHistory.map((squares, move) => {
@@ -63,8 +97,9 @@ export default function Game() {
         for (let column=0; column<squares[row].length; column++){
           if (squares[row][column] != boardHistory[move-1][row][column]){
             //assign position to button
-            const playedSquare = "" + (row+1) + String.fromCharCode(column+97);
-            description = "Move #" + move + " XorO at " + playedSquare;
+            const playedSquare = "" + (squares.length-row) + String.fromCharCode(column+97);
+            const player = move % 2 == 0 ? ": O" : ": X" 
+            description = "Move #" + move + player + " at " + playedSquare;
             break;
           }
         }
@@ -89,21 +124,31 @@ export default function Game() {
       <CssBaseline/>
       <ModeToggle /> 
       <div className="game">
-        <ChangeGame currentWidth={currentSquares[0].length} currentHeight={currentSquares.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
+        <Stack
+          direction="column"
+          alignItems="center"
+          justifyContent="center"
+          spacing="2">
+          <Typography endDecorator={<Switch checked={gravity} onChange={(event)=> gravity ? setGravity(false) : gravityDrop()} endDecorator={gravity ? "On" : "Off"}/>}>Gravity</Typography>
+          <ChangeGame currentWidth={currentSquares[0].length} currentHeight={currentSquares.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
+        </Stack>
         <div className="gameBoard">
-          <Board xIsNext={xIsNext} squares={currentSquares} winCon={winCon} winningSquares={winningSquares} setWinningSquares={setWinningSquares} onPlay={handlePlay} />
+          <Board xIsNext={xIsNext} squares={currentSquares} winCon={winCon} winningSquares={winningSquares} setWinningSquares={setWinningSquares} onPlay={handlePlay} gravity={gravity} />
         </div>
-      <div className="gameInfo">
+      <Sheet className="gameInfo" variant="outlined"
+        sx={{maxHeight: 300,
+              overflow: "scroll",
+              "--Sheet-radius": "49px"}}>
         <List size="small">
           {moves}
           <Typography key='current'>{current}</Typography>
         </List>
-      </div>
+      </Sheet>
       </div>
     </CssVarsProvider>
   )
 }
-function Board({xIsNext, squares, onPlay, winCon, winningSquares, setWinningSquares}) {
+function Board({xIsNext, squares, onPlay, winCon, winningSquares, setWinningSquares, gravity}) {
   let status;
   if (winningSquares) {
     status = <Typography >Winner: 
@@ -113,9 +158,20 @@ function Board({xIsNext, squares, onPlay, winCon, winningSquares, setWinningSqua
     status = <Typography >Next player: 
     <Typography variant="solid">{xIsNext ? "X" : "O"}</Typography>
   </Typography>
-  }      
+  }
   function handleClick(row, column) {
     const nextSquares = deepCopy(squares);
+    //change row value if gravity is toggled on
+    if (gravity){
+      for (let i=squares.length-1;i>=0;i--){
+        if (squares[i][column]){
+          continue;
+        } else {
+          row = i
+          break;
+        }
+      }
+    } 
     //check if play is possible
     if (squares[row][column] || winningSquares){
       return;
