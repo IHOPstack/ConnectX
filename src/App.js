@@ -54,28 +54,29 @@ export default function Game() {
     }
   }
   function gravityDrop(){
+    let nextSquares = currentSquares;
     //lower all tokens
-    for (let columnPos=0;columnPos<currentSquares[0].length;columnPos++){
+    for (let columnPos=0;columnPos<nextSquares[0].length;columnPos++){
       let emptyCells = [];
-      for (let rowNum=currentSquares.length-1;rowNum>=0;rowNum--){
-        let boxInQuestion = currentSquares[rowNum][columnPos];
+      for (let rowNum=nextSquares.length-1;rowNum>=0;rowNum--){
+        let boxInQuestion = nextSquares[rowNum][columnPos];
         if (!boxInQuestion){
           emptyCells.push(rowNum);
         } else {
           if (!emptyCells.length == 0){
             const newRow = emptyCells.shift();
-            currentSquares[newRow][columnPos] = boxInQuestion;
-            currentSquares[rowNum][columnPos] = null;
+            nextSquares[newRow][columnPos] = boxInQuestion;
+            nextSquares[rowNum][columnPos] = null;
             emptyCells.push(rowNum);
           }
         }
       }
     }
     //check for winner on new board (should find some way to avoid needing loop label)
-    labledLoop: for (let columnPos=0;columnPos<currentSquares[0].length;columnPos++){
-      for (let rowNum=currentSquares.length-1;rowNum>=0;rowNum--){
-        if (currentSquares[rowNum][columnPos]){
-          let winningList = calculateWinner(currentSquares, rowNum, columnPos, winCon);
+    labledLoop: for (let columnPos=0;columnPos<nextSquares[0].length;columnPos++){
+      for (let rowNum=nextSquares.length-1;rowNum>=0;rowNum--){
+        if (nextSquares[rowNum][columnPos]){
+          let winningList = calculateWinner(nextSquares, rowNum, columnPos, winCon);
           if (winningList){
             setWinningSquares(winningList);
             break labledLoop;  
@@ -85,7 +86,7 @@ export default function Game() {
         }
       }
     }
-    handlePlay(currentSquares)
+    handlePlay(nextSquares)
     setGravity(true);
   }
 
@@ -103,6 +104,9 @@ export default function Game() {
             break;
           }
         }
+      }
+      if (!description){
+        description = "Ope, there goes gravity!"
       }
     } else {
       description = "Go to game start";
@@ -132,13 +136,13 @@ export default function Game() {
           <Typography endDecorator={<Switch checked={gravity} onChange={(event)=> gravity ? setGravity(false) : gravityDrop()} endDecorator={gravity ? "On" : "Off"}/>}>Gravity</Typography>
           <ChangeGame currentWidth={currentSquares[0].length} currentHeight={currentSquares.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
         </Stack>
-        <div className="gameBoard">
+        <Sheet variant="outlined"
+          className="gameBoard">
           <Board xIsNext={xIsNext} squares={currentSquares} winCon={winCon} winningSquares={winningSquares} setWinningSquares={setWinningSquares} onPlay={handlePlay} gravity={gravity} />
-        </div>
+        </Sheet>
       <Sheet className="gameInfo" variant="outlined"
-        sx={{maxHeight: 300,
-              overflow: "scroll",
-              "--Sheet-radius": "49px"}}>
+        sx={{maxHeight: 34*(currentSquares.length+2),
+              overflow: "scroll",}}>
         <List size="small">
           {moves}
           <Typography key='current'>{current}</Typography>
@@ -199,7 +203,7 @@ function Board({xIsNext, squares, onPlay, winCon, winningSquares, setWinningSqua
     })
     const numLabel = <Label character={rowKey}></Label>
     return (   
-      <div key={rowKey} className="board-row">{numLabel}{rows}</div>
+      <Sheet key={rowKey} className="board-row">{numLabel}{rows}</Sheet>
     )
   })
   //lower labels
@@ -237,7 +241,6 @@ function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, wi
       <Modal open={open} onClose={()=>setOpen(false)}>
         <ModalDialog>
           <DialogTitle>New Board. New game.</DialogTitle>
-          <DialogContent>You know what you're doing. Do I really need to be talking still?</DialogContent>
           <form onSubmit={(event)=> {
             event.preventDefault();
             ChangeSettings(inputHeight, inputWidth, inputWinCon)
@@ -246,18 +249,43 @@ function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, wi
             <Stack spacing={1} direction="row">
               <FormControl error={false}>
                 <FormLabel>length</FormLabel>
-                <Input required defaultValue={inputWidth} onChange={event => {
-                  setInputWidth(event.target.value)}}/>
+                <Input
+                  required type="number"
+                  defaultValue={inputWidth}
+                  onChange={event => {setInputWidth(event.target.value)}}
+                  slotProps={{
+                    input: {
+                      min: 3,
+                      max: 100
+                    }
+                  }}/>
               </FormControl>
               <FormControl error={false}>
                 <FormLabel>height</FormLabel>
-                <Input required defaultValue={inputHeight} onChange={event => {
-                  setInputHeight(event.target.value)}}/>
+                <Input
+                  required type="number"
+                  defaultValue={inputHeight}
+                  onChange={event => {setInputHeight(event.target.value)}}
+                  slotProps={{
+                    input: {
+                      min: 3,
+                      max: 999
+
+                    }
+                  }}/>
               </FormControl>
               <FormControl error={false}>
-                <FormLabel>amount in a row needed</FormLabel>
-                <Input required defaultValue={winCon} onChange={event => {
-                  setInputWinCon(event.target.value)}}/>
+                <FormLabel>winning straight</FormLabel>
+                <Input
+                  required type="number"
+                  defaultValue={winCon}
+                  onChange={event => {setInputWinCon(event.target.value)}}
+                  slotProps={{
+                    input: {
+                      min: 3,
+                      max: 20
+                    }
+                  }}/>
               </FormControl>
               <Button type="submit">Let's play!</Button>
             </Stack>

@@ -97,7 +97,10 @@ body {
   text-align: center;
   width: 34px;
 }
-
+.board-row{
+  overflow: auto;
+  min-width: max-content;
+}
 .board-row:after {
   clear: both;
   content: '';
@@ -116,4 +119,7 @@ body {
   margin-left: 20px;
   display: flex;
   flex-direction: column;
+}
+.gameBoard {
+  overflow: auto;
 }
