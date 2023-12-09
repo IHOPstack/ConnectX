@@ -54,7 +54,7 @@ export default function Game() {
     }
   }
   function gravityDrop(){
-    let nextSquares = currentSquares;
+    let nextSquares = deepCopy(currentSquares);
     //lower all tokens
     for (let columnPos=0;columnPos<nextSquares[0].length;columnPos++){
       let emptyCells = [];
@@ -73,20 +73,10 @@ export default function Game() {
       }
     }
     //check for winner on new board (should find some way to avoid needing loop label)
-    labledLoop: for (let columnPos=0;columnPos<nextSquares[0].length;columnPos++){
-      for (let rowNum=nextSquares.length-1;rowNum>=0;rowNum--){
-        if (nextSquares[rowNum][columnPos]){
-          let winningList = calculateWinner(nextSquares, rowNum, columnPos, winCon);
-          if (winningList){
-            setWinningSquares(winningList);
-            break labledLoop;  
-        } else {
-          break;
-        }
-        }
-      }
-    }
-    handlePlay(nextSquares)
+    console.log(nextSquares);
+    const winningList = AnyWinnerAllSquares(nextSquares, winCon);
+    setWinningSquares(winningList)
+    handlePlay(nextSquares);
     setGravity(true);
   }
 
@@ -294,6 +284,19 @@ function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, wi
       </Modal>
     </>
   )
+}
+function AnyWinnerAllSquares(squares, winCon){
+  let winner = null;
+  for (let columnPos=0;columnPos<squares[0].length;columnPos++){
+    for (let rowNum=squares.length-1;rowNum>=0;rowNum--){
+      if (squares[rowNum][columnPos]){
+        winner = calculateWinner(squares, rowNum, columnPos, winCon);
+        if (winner){
+          return winner;
+        }
+      }
+    }
+  }
 }
 function calculateWinner(squares, rowPos, columnPos, winCon) {
   const newMark = squares[rowPos][columnPos];
