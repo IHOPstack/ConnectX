@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Button from '@mui/joy/Button';
 import Sheet from '@mui/joy/Sheet';
 import { CssVarsProvider, useColorScheme } from '@mui/joy/styles';
@@ -11,7 +11,6 @@ import Input from '@mui/joy/Input';
 import Modal from '@mui/joy/Modal';
 import ModalDialog from '@mui/joy/ModalDialog';
 import DialogTitle from '@mui/joy/DialogTitle';
-import DialogContent from '@mui/joy/DialogContent';
 import Stack from '@mui/joy/Stack';
 import Switch from '@mui/joy/Switch';
 
@@ -46,7 +45,7 @@ export default function Game() {
   const [gravity, setGravity] = useState(false);
   const dropCount = boardHistory.filter(item => item.isGravityDrop === true).length;
   const gravityWeightedIndex = currentMove-dropCount;
-  const xIsNext = (currentMove-dropCount) % 2 === 0;
+  const xIsNext = (gravityWeightedIndex) % 2 === 0;
   const currentSquares = boardHistory[currentMove];
 
   function handlePlay(nextState){
@@ -149,7 +148,7 @@ export default function Game() {
         </Sheet>
       <Sheet className="gameInfo" variant="outlined"
         sx={{maxHeight: 34*(currentSquares.board.length+2),
-              overflow: "scroll",}}>
+              overflow: "auto",}}>
         <List size="small">
           {moves}
           <Typography key='current'>{current}</Typography>
