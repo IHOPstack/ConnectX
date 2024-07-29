@@ -132,13 +132,13 @@ export default function Game() {
     return (
     <CssVarsProvider>
       <CssBaseline/>
-      <ModeToggle /> 
       <div className="game">
         <Stack
-          direction="column"
+          direction={{ xs: "row", sm: "column" }}
           alignItems="center"
           justifyContent="center"
           spacing="2">
+          <ModeToggle /> 
           <Typography endDecorator={<Switch checked={gravity} onChange={(event)=> gravity ? setGravity(false) : gravityDrop()} endDecorator={gravity ? "On" : "Off"}/>}>Gravity</Typography>
           <ChangeGame currentWidth={currentSquares.board[0].length} currentHeight={currentSquares.board.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
         </Stack>
@@ -238,7 +238,8 @@ function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, wi
   const [inputWinCon,setInputWinCon] = useState(winCon);
   //Change board parameters  
   function ChangeSettings(inputHeight, inputWidth, inputWinCon){
-    setHistory([Array.from({length:inputHeight}, () => Array(parseInt(inputWidth)).fill(null))]);
+    const boardSettings = Array.from({length:inputHeight}, () => Array(parseInt(inputWidth)).fill(null));
+    setHistory([new BoardState(boardSettings, false, 0)]);
     setCurrentMove(0);
     setWinCon(parseInt(inputWinCon));
     setWinningSquares(null);
