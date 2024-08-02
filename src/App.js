@@ -23,16 +23,17 @@ function Square({squareID, value, fillSquare, winningSquares}) {
   }
   return <Button className={isWinning ? "winning":"square"} variant={isWinning ? "solid":"outlined"} onClick={fillSquare}>{value}</Button>;
 }
+// Modular grid labels prevent the need for complicated styling when facilitating different board size
 function Label({character}){
   return <Typography className="gridLabel">{character}</Typography>
 }
 let stillWinner;
 
 class BoardState{
-  constructor(board, isGravityDrop, gravityWeightedIndex) {  //Add (player, squareID, winningSquares)
+  constructor(board, isGravityDrop, gravityWeightedIndex) {
     this.board = board;
     this.isGravityDrop = isGravityDrop;
-    this.gravityWeightedIndex = gravityWeightedIndex;
+    this.gravityWeightedIndex = gravityWeightedIndex; // Prevents Move #s from being effected by gravity switch
   }
 }
 
@@ -43,8 +44,11 @@ export default function Game() {
   const [winCon, setWinCon] = useState(4);
   const [winningSquares, setWinningSquares] = useState(null);
   const [gravity, setGravity] = useState(false);
-  const dropCount = boardHistory.filter(item => item.isGravityDrop === true).length;
-  const gravityWeightedIndex = currentMove-dropCount;
+  const gravityCount = boardHistory.slice(0, currentMove+1).filter(item => item.isGravityDrop === true).length;
+  const gravityWeightedIndex = currentMove-gravityCount;
+  console.log('fragvity count: ', gravityCount);
+  console.log('current move: ', currentMove)
+  console.log('GWI: ', gravityWeightedIndex)
   const xIsNext = (gravityWeightedIndex) % 2 === 0;
   const currentSquares = boardHistory[currentMove];
 
@@ -59,6 +63,7 @@ export default function Game() {
     }
     setWinningSquares(null);
     setCurrentMove(nextMove);
+    setGravity(gravity)
     if (nextMove == boardHistory.length-1){
       setWinningSquares(stillWinner);
     }
@@ -66,7 +71,7 @@ export default function Game() {
   function gravityDrop(){
     let nextSquares = deepCopy(currentSquares.board);
     let isChanged = false;
-    //lower all tokens
+    // Lower all tokens by tracking and filling empty cells from bottom to top
     for (let columnPos=0;columnPos<nextSquares[0].length;columnPos++){
       let emptyCells = [];
       for (let rowNum=nextSquares.length-1;rowNum>=0;rowNum--){
@@ -85,10 +90,10 @@ export default function Game() {
       }
     }
     if (isChanged){
-      //check for winner on new board (should find some way to avoid needing loop label)
-      const winningList = AnyWinnerAllSquares(nextSquares, winCon);
+      // Gravity drop can create a winning board state 
+      const winningList = ScanGridForWinner(nextSquares, winCon);
       setWinningSquares(winningList);
-      //create new board object and add to history
+
       const newBoard = new BoardState(nextSquares,true,gravityWeightedIndex)
       handlePlay(newBoard);
     }
@@ -102,11 +107,11 @@ export default function Game() {
       description = "Oh, there goes gravity!";
       buttonDrops += 1;
     } else if (move > 0) {
-      //find position of move
+      // Find position of move (a reafactoring should store move location in each Board)
       for (let row =0; row < squares.length; row++){
         for (let column=0; column<squares[row].length; column++){
           if (squares[row][column] != boardHistory[move-1].board[row][column]){
-            //assign position to button
+            // Assign position to button
             const playedSquare = "" + (squares.length-row) + String.fromCharCode(column+97);
             const player = move % 2 == 0 ? ": O" : ": X" 
             description = "Move #" + (move-buttonDrops) + player + " at " + playedSquare;
@@ -125,8 +130,10 @@ export default function Game() {
   })
   let current = "";
   if (winningSquares){
-    current = "Game ended after turn " + (boardHistory.length-1);
+    console.log(gravityWeightedIndex)
+    current = "Game ended after turn " + (gravityWeightedIndex+1);
   } else {
+    console.log(gravityWeightedIndex)
     current = "You are on turn " + (gravityWeightedIndex+1)
   }
     return (
@@ -138,9 +145,9 @@ export default function Game() {
           alignItems="center"
           justifyContent="center"
           spacing="2">
-          <ModeToggle /> 
+          <DarkModeToggle /> 
           <Typography endDecorator={<Switch checked={gravity} onChange={(event)=> gravity ? setGravity(false) : gravityDrop()} endDecorator={gravity ? "On" : "Off"}/>}>Gravity</Typography>
-          <ChangeGame currentWidth={currentSquares.board[0].length} currentHeight={currentSquares.board.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
+          <ChangeSettingsSubmit currentWidth={currentSquares.board[0].length} currentHeight={currentSquares.board.length} setHistory={setHistory} setCurrentMove={setCurrentMove} winCon={winCon} setWinCon={setWinCon} setWinningSquares={setWinningSquares} />
         </Stack>
         <Sheet variant="outlined"
           className="gameBoard">
@@ -159,6 +166,7 @@ export default function Game() {
   )
 }
 function Board({xIsNext, state, onPlay, winCon, winningSquares, setWinningSquares, gravity, gravityWeightedIndex}) {
+  console.log(gravityWeightedIndex);
   const squares = state.board;
   let status;
   if (winningSquares) {
@@ -172,7 +180,7 @@ function Board({xIsNext, state, onPlay, winCon, winningSquares, setWinningSquare
   }
   function handleClick(row, column) {
     const nextSquares = deepCopy(squares);
-    //change row value if gravity is toggled on
+    // Change row value if gravity is toggled on
     if (gravity){
       for (let i=squares.length-1;i>=0;i--){
         if (squares[i][column]){
@@ -183,23 +191,19 @@ function Board({xIsNext, state, onPlay, winCon, winningSquares, setWinningSquare
         }
       }
     } 
-    //check if play is possible
+    // Check if play is possible
     if (squares[row][column] || winningSquares){
       return;
     }
-    //display the move
     if (xIsNext) {
       nextSquares[row][column] = "X";   
     } else {
       nextSquares[row][column] = "O";
     }
-    //determine if we have a winner
     setWinningSquares(calculateWinner(nextSquares, row, column, winCon));
-    //create new state and add to history
     const playedState = new BoardState(nextSquares, false, gravityWeightedIndex);
     onPlay(playedState);
   }
-  //layout squares and labels for board
   const grid = squares.map((lines, rowNum) => {
     const rowKey = squares.length-rowNum;
     const rows = lines.map((value, columnNum) => {
@@ -215,11 +219,9 @@ function Board({xIsNext, state, onPlay, winCon, winningSquares, setWinningSquare
       <Sheet key={rowKey} className="board-row">{numLabel}{rows}</Sheet>
     )
   })
-  //lower labels
   const letterLabels = squares[0].map((column, num) =>
     <Label character={String.fromCharCode(num+97)}></Label>
   )
-  //return the board
   return (
     <>
       <div className="status">{status}</div>
@@ -231,13 +233,12 @@ function Board({xIsNext, state, onPlay, winCon, winningSquares, setWinningSquare
     </>
   );
 }
-function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, winCon, setWinCon, setWinningSquares}){
+function ChangeSettingsSubmit({currentWidth, currentHeight, setHistory, setCurrentMove, winCon, setWinCon, setWinningSquares}){
   const [open,setOpen] = useState(false);
   const [inputHeight,setInputHeight] = useState(currentHeight);
   const [inputWidth,setInputWidth] = useState(currentWidth);
   const [inputWinCon,setInputWinCon] = useState(winCon);
-  //Change board parameters  
-  function ChangeSettings(inputHeight, inputWidth, inputWinCon){
+  function RealizeSettingsInput(inputHeight, inputWidth, inputWinCon){
     const boardSettings = Array.from({length:inputHeight}, () => Array(parseInt(inputWidth)).fill(null));
     setHistory([new BoardState(boardSettings, false, 0)]);
     setCurrentMove(0);
@@ -253,7 +254,7 @@ function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, wi
           <DialogTitle>New Board. New game.</DialogTitle>
           <form onSubmit={(event)=> {
             event.preventDefault();
-            ChangeSettings(inputHeight, inputWidth, inputWinCon)
+            RealizeSettingsInput(inputHeight, inputWidth, inputWinCon)
           }}
           >
             <Stack spacing={1} direction="row">
@@ -305,7 +306,7 @@ function ChangeGame({currentWidth, currentHeight, setHistory, setCurrentMove, wi
     </>
   )
 }
-function AnyWinnerAllSquares(squares, winCon){
+function ScanGridForWinner(squares, winCon){
   let winner = null;
   for (let columnPos=0;columnPos<squares[0].length;columnPos++){
     for (let rowNum=squares.length-1;rowNum>=0;rowNum--){
@@ -336,22 +337,22 @@ function calculateWinner(squares, rowPos, columnPos, winCon) {
     return squareCounter
   }
   const firstSquare = [newMark, [rowPos, columnPos]]
-  //check horizontal
+  // Check horizontal
   let horizontalSquares = firstSquare.concat(checkDirection(0,1)).concat(checkDirection(0,-1));
   if (horizontalSquares.length >= winCon+1){
     return horizontalSquares;
   }
-  //check vertical
+  // Check vertical
   let verticalSquares = firstSquare.concat(checkDirection(1,0)).concat(checkDirection(-1,0));
   if (verticalSquares.length >= winCon+1){
     return verticalSquares;
   }
-  //check diagonal up
+  // Check diagonal up
   let diagonalUpSquares = firstSquare.concat(checkDirection(1,1)).concat(checkDirection(-1,-1));
   if (diagonalUpSquares.length >= winCon+1){
     return diagonalUpSquares;
   }
-  //check diaonal down
+  // Check diaonal down
   let diagonalDownSquares = firstSquare.concat(checkDirection(-1,1)).concat(checkDirection(1,-1));
   if (diagonalDownSquares.length >= winCon+1){
     return diagonalDownSquares;
@@ -368,8 +369,7 @@ function deepCopy(OGarray) {
   }
   return arrayCopy;
 }
-//Light/Dark mode
-function ModeToggle(){
+function DarkModeToggle(){
   const {mode,setMode} = useColorScheme();
   const [mounted,setMounted] = useState(false);
   useEffect(() => {
