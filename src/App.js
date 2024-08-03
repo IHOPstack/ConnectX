@@ -46,9 +46,6 @@ export default function Game() {
   const [gravity, setGravity] = useState(false);
   const gravityCount = boardHistory.slice(0, currentMove+1).filter(item => item.isGravityDrop === true).length;
   const gravityWeightedIndex = currentMove-gravityCount;
-  console.log('fragvity count: ', gravityCount);
-  console.log('current move: ', currentMove)
-  console.log('GWI: ', gravityWeightedIndex)
   const xIsNext = (gravityWeightedIndex) % 2 === 0;
   const currentSquares = boardHistory[currentMove];
 
@@ -130,10 +127,8 @@ export default function Game() {
   })
   let current = "";
   if (winningSquares){
-    console.log(gravityWeightedIndex)
     current = "Game ended after turn " + (gravityWeightedIndex+1);
   } else {
-    console.log(gravityWeightedIndex)
     current = "You are on turn " + (gravityWeightedIndex+1)
   }
     return (
@@ -166,7 +161,6 @@ export default function Game() {
   )
 }
 function Board({xIsNext, state, onPlay, winCon, winningSquares, setWinningSquares, gravity, gravityWeightedIndex}) {
-  console.log(gravityWeightedIndex);
   const squares = state.board;
   let status;
   if (winningSquares) {

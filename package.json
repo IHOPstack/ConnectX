@@ -12,7 +12,7 @@
   },
   "main": "/index.js",
   "name": "vy6j3f",
-  "description": null,
+  "description": "null",
   "version": "0.0.0",
   "scripts": {
     "start": "react-scripts start",
